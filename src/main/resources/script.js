@@ -268,6 +268,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // Обработчик события click для кнопки "Показать все сессии"
    showAllSessionsButton.addEventListener('click', function() {
+   console.log(id_child)
        if (!id_child) {
            alert('Ребенок не выбран');
            return;

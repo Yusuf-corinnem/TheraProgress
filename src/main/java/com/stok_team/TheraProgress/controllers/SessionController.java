@@ -10,6 +10,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.Optional;
+import java.util.UUID;
 
 @RestController
 @RequestMapping(path = "/sessions")
@@ -29,6 +30,21 @@ public class SessionController {
     @GetMapping
     public ResponseEntity<Iterable<Session>> getSession() {
         return new ResponseEntity<>(sessionRepository.findAll(), HttpStatus.OK);
+    }
+
+    @CrossOrigin(origins = "http://localhost:63342")
+    @GetMapping(params = "childId")
+    public ResponseEntity<Iterable<Session>> getSessionsByChildId(@RequestParam UUID childId) {
+        // Найдем ребенка по childId
+        Optional<Child> childOptional = childRepository.findById(childId);
+        if (!childOptional.isPresent()) {
+            return new ResponseEntity<>(HttpStatus.NOT_FOUND);
+        }
+
+        // Найдем все сессии, связанные с этим ребенком
+        Iterable<Session> sessions = sessionRepository.findByChild(childOptional.get());
+
+        return new ResponseEntity<>(sessions, HttpStatus.OK);
     }
 
     @CrossOrigin(origins = "http://localhost:63342")
