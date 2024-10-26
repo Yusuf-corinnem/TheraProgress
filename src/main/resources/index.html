@@ -4,12 +4,24 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Children List</title>
+    <style>
+        .select-container {
+            display: flex;
+            align-items: center;
+        }
+        .select-container select {
+            margin-right: 10px;
+        }
+    </style>
 </head>
 <body>
 <h1>Select a Child</h1>
-<select id="children-select">
-    <option value="">--Please choose an option--</option>
-</select>
+<div class="select-container">
+    <select id="children-select">
+        <option value="">--Please choose an option--</option>
+    </select>
+    <button id="add-student-button">Добавить ученика</button>
+</div>
 
 <div id="child-info" style="margin-top: 20px;">
     <!-- Информация о ребенке будет отображаться здесь -->
@@ -22,6 +34,17 @@
 
 <div id="session-table-container" style="margin-top: 20px;">
     <!-- Таблица для ввода данных о сессии будет отображаться здесь -->
+</div>
+
+<div id="add-student-form" style="display: none;">
+    <input type="text" id="firstName" placeholder="Имя">
+    <input type="text" id="lastName" placeholder="Фамилия">
+    <input type="text" id="secondName" placeholder="Отчество">
+    <input type="text" id="birth" placeholder="Дата рождения (дд.мм.гггг)">
+    <input type="text" id="target" placeholder="Цель">
+    <input type="text" id="method" placeholder="Метод">
+    <input type="text" id="prompt" placeholder="Тип подсказки">
+    <button id="save-student-button">Сохранить ученика</button>
 </div>
 
 <script src="script.js"></script>

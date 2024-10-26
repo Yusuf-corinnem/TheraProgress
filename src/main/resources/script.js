@@ -172,7 +172,7 @@ document.addEventListener('DOMContentLoaded', function() {
             const percentCell = table.rows[1].cells[13];
             percentCell.textContent = percentSelfReactions + '%';
         }
-        
+
 //    Переделать
         function countPercentSelfReactions(sessionData) {
             const selfReactionChar = 'c';
@@ -180,83 +180,85 @@ document.addEventListener('DOMContentLoaded', function() {
             return Math.round((selfReactionsCount / sessionData.length) * 100);
         }
 
-    function saveSession() {
-        const table = sessionTableContainer.querySelector('table');
-        if (!table) {
-            alert('Таблица не найдена');
-            return;
-        }
+function saveSession() {
+    const table = sessionTableContainer.querySelector('table');
+    if (!table) {
+        alert('Таблица не найдена');
+        return;
+    }
 
-        const inputs = table.querySelectorAll('input');
-        const selects = table.querySelectorAll('select');
-        if (inputs.length !== 12 || selects.length !== 1) {
-            alert('Неверное количество полей в таблице');
-            return;
-        }
+    const inputs = table.querySelectorAll('input');
+    const selects = table.querySelectorAll('select');
 
-        const dateInput = inputs[0].value;
-        const method = selects[0].value;
-        const phase = inputs[1].value;
-        const sessionData = Array.from(inputs).slice(2, 12).map(input => input.value.charAt(0));
+    // Проверка количества полей
+    if (inputs.length !== 2 || selects.length !== 11) {
+        alert('Неверное количество полей в таблице');
+        return;
+    }
 
-        let date;
-        if (dateInput) {
-            const dateParts = dateInput.split('.');
-            if (dateParts.length === 3) {
-                date = new Date(dateParts[2], dateParts[1] - 1, dateParts[0]);
-                if (isNaN(date.getTime())) {
-                    alert('Неверный формат даты');
-                    return;
-                }
-            } else {
+    const dateInput = inputs[0].value;
+    const phase = inputs[1].value;
+    const method = selects[0].value;
+    const sessionData = Array.from(selects).slice(1, 11).map(select => select.value);
+
+    let date;
+    if (dateInput) {
+        const dateParts = dateInput.split('.');
+        if (dateParts.length === 3) {
+            date = new Date(dateParts[2], dateParts[1] - 1, dateParts[0]);
+            if (isNaN(date.getTime())) {
                 alert('Неверный формат даты');
                 return;
             }
         } else {
-            alert('Дата не введена');
+            alert('Неверный формат даты');
             return;
         }
-
-        const formattedDate = date.toLocaleDateString('ru-RU', { day: '2-digit', month: '2-digit', year: 'numeric' });
-        const percentSelfReactions = countPercentSelfReactions(sessionData);
-
-        const session = {
-            date: formattedDate,
-            methodName: method,
-            phaseName: phase,
-            session: sessionData,
-            percentSelfReactions: percentSelfReactions,
-            childId: id_child
-        };
-
-        if (!id_child) {
-            alert('Ребенок не выбран');
-            return;
-        }
-
-        fetch('http://localhost:8080/sessions', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify(session)
-        })
-        .then(response => {
-            if (!response.ok) {
-                return response.text().then(text => {
-                    throw new Error(`Network response was not ok: ${text}`);
-                });
-            }
-            return response.json();
-        })
-        .then(data => {
-            alert('Сессия успешно сохранена');
-        })
-        .catch(error => {
-            console.error('There was a problem with the fetch operation:', error);
-            alert('Ошибка при сохранении сессии');
-        });
+    } else {
+        alert('Дата не введена');
+        return;
     }
+
+    const formattedDate = date.toLocaleDateString('ru-RU', { day: '2-digit', month: '2-digit', year: 'numeric' });
+    const percentSelfReactions = countPercentSelfReactions(sessionData);
+
+    const session = {
+        date: formattedDate,
+        methodName: method,
+        phaseName: phase,
+        session: sessionData,
+        percentSelfReactions: percentSelfReactions,
+        childId: id_child
+    };
+
+    if (!id_child) {
+        alert('Ребенок не выбран');
+        return;
+    }
+
+    fetch('http://localhost:8080/sessions', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(session)
+    })
+    .then(response => {
+        if (!response.ok) {
+            return response.text().then(text => {
+                throw new Error(`Network response was not ok: ${text}`);
+            });
+        }
+        return response.json();
+    })
+    .then(data => {
+        alert('Сессия успешно сохранена');
+    })
+    .catch(error => {
+        console.error('There was a problem with the fetch operation:', error);
+        alert('Ошибка при сохранении сессии');
+    });
+}
 
     function showAllSessions() {
         if (!id_child) {
@@ -352,4 +354,69 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // Обработчик события click для кнопки "Показать все сессии"
     showAllSessionsButton.addEventListener('click', showAllSessions);
+});
+
+document.addEventListener('DOMContentLoaded', function() {
+    // ... (предыдущий код)
+
+    const addStudentButton = document.getElementById('add-student-button');
+    const addStudentForm = document.getElementById('add-student-form');
+    const saveStudentButton = document.getElementById('save-student-button');
+
+    // Функция для отображения формы добавления ученика
+    function showAddStudentForm() {
+        addStudentForm.style.display = 'block';
+    }
+
+    // Функция для сохранения ученика
+    function saveStudent() {
+        const firstName = document.getElementById('firstName').value;
+        const lastName = document.getElementById('lastName').value;
+        const secondName = document.getElementById('secondName').value;
+        const birth = document.getElementById('birth').value;
+        const target = document.getElementById('target').value;
+        const method = document.getElementById('method').value;
+        const prompt = document.getElementById('prompt').value;
+
+        const student = {
+            firstName: firstName,
+            lastName: lastName,
+            secondName: secondName,
+            birth: birth,
+            target: target,
+            method: method,
+            prompt: prompt
+        };
+
+        fetch('http://localhost:8080/children', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(student)
+        })
+        .then(response => {
+            if (!response.ok) {
+                return response.text().then(text => {
+                    throw new Error(`Network response was not ok: ${text}`);
+                });
+            }
+            return response.json();
+        })
+        .then(data => {
+            alert('Ученик успешно добавлен');
+            addStudentForm.style.display = 'none'; // Скрыть форму после успешного добавления
+            loadChildren().then(children => displayChildren(children)); // Обновить список детей
+        })
+        .catch(error => {
+            console.error('There was a problem with the fetch operation:', error);
+            alert('Ошибка при добавлении ученика');
+        });
+    }
+
+    // Обработчик события click для кнопки "Добавить ученика"
+    addStudentButton.addEventListener('click', showAddStudentForm);
+
+    // Обработчик события click для кнопки "Сохранить ученика"
+    saveStudentButton.addEventListener('click', saveStudent);
 });
