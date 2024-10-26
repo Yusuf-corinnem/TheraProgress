@@ -81,6 +81,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
         childInfoElement.innerHTML = `
             <h2>${child.lastName} ${child.firstName} ${child.secondName}</h2>
+            <p>Target: ${child.target}</p>
             <p>Birth: ${birthDateString}</p>
             <p>Method: ${child.method}</p>
             <p>Prompt: ${child.prompt}</p>
@@ -408,10 +409,6 @@ document.addEventListener('DOMContentLoaded', function() {
             addStudentForm.style.display = 'none'; // Скрыть форму после успешного добавления
             loadChildren().then(children => displayChildren(children)); // Обновить список детей
         })
-        .catch(error => {
-            console.error('There was a problem with the fetch operation:', error);
-            alert('Ошибка при добавлении ученика');
-        });
     }
 
     // Обработчик события click для кнопки "Добавить ученика"
