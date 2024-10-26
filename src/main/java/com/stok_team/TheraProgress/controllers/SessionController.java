@@ -9,6 +9,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.ArrayList;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -58,8 +59,19 @@ public class SessionController {
 
         // Установим связь с ребенком
         session.setChild(childOptional.get());
+        ArrayList<Character> stok = session.getSession();
+        int count = 0;
+        for (Character str : stok) {
+            if (Character.toLowerCase(str) == 'с') {
+                count++;
+            }
+        }
 
+        session.setPercentSelfReactions(count * 100 / stok.size());
+        System.out.println(session.getPercentSelfReactions());
         // Сохраним сессию
         return new ResponseEntity<>(sessionRepository.save(session), HttpStatus.CREATED);
     }
+
+
 }

@@ -161,7 +161,7 @@ document.addEventListener('DOMContentLoaded', function() {
         table.style.width = '100%';
 
         const headerRow = table.insertRow();
-        const headers = ['Дата', 'Метод', 'Этап', 'Столбец 1', 'Столбец 2', 'Столбец 3', 'Столбец 4', 'Столбец 5', 'Столбец 6', 'Столбец 7', 'Столбец 8', 'Столбец 9', 'Столбец 10'];
+        const headers = ['Дата', 'Метод', 'Этап', 'Столбец 1', 'Столбец 2', 'Столбец 3', 'Столбец 4', 'Столбец 5', 'Столбец 6', 'Столбец 7', 'Столбец 8', 'Столбец 9', 'Столбец 10', 'Процент СР'];
         headers.forEach(headerText => {
             const headerCell = document.createElement('th');
             headerCell.textContent = headerText;
@@ -171,13 +171,23 @@ document.addEventListener('DOMContentLoaded', function() {
         });
 
         const inputRow = table.insertRow();
-        headers.forEach(headerText => {
+        headers.forEach((headerText, index) => {
             const inputCell = document.createElement('td');
-            const input = document.createElement('input');
-            input.type = 'text';
-            input.style.width = '100%';
-            input.style.boxSizing = 'border-box';
-            inputCell.appendChild(input);
+            if (index < 3) {
+                const input = document.createElement('input');
+                input.type = 'text';
+                input.style.width = '100%';
+                input.style.boxSizing = 'border-box';
+                inputCell.appendChild(input);
+            } else if (index === 13) {
+                inputCell.textContent = '0%'; // Инициализируем ячейку "Процент СР"
+            } else {
+                const input = document.createElement('input');
+                input.type = 'text';
+                input.style.width = '100%';
+                input.style.boxSizing = 'border-box';
+                inputCell.appendChild(input);
+            }
             inputCell.style.border = '1px solid black';
             inputCell.style.padding = '8px';
             inputRow.appendChild(inputCell);
@@ -185,7 +195,36 @@ document.addEventListener('DOMContentLoaded', function() {
 
         sessionTableContainer.innerHTML = '';
         sessionTableContainer.appendChild(table);
+
+        const calculatePercentButton = document.createElement('button');
+        calculatePercentButton.textContent = 'Посчитать процент';
+        calculatePercentButton.style.marginTop = '10px';
+        sessionTableContainer.appendChild(calculatePercentButton);
+
+        // Обработчик события click для кнопки "Посчитать процент"
+        calculatePercentButton.addEventListener('click', function() {
+            const inputs = table.querySelectorAll('input');
+            if (inputs.length !== 13) {
+                alert('Неверное количество полей в таблице');
+                return;
+            }
+
+            const sessionData = Array.from(inputs).slice(3, 13).map(input => input.value.charAt(0));
+
+            // Вызываем функцию countPercentSelfReactions
+            const percentSelfReactions = countPercentSelfReactions(sessionData);
+
+            // Обновляем ячейку "Процент СР"
+            const percentCell = inputRow.cells[13];
+            percentCell.textContent = percentSelfReactions + '%';
+        });
     });
+
+    function countPercentSelfReactions(sessionData) {
+        const selfReactionChar = 'c';
+        const selfReactionsCount = sessionData.filter(value => value.toLowerCase() === selfReactionChar).length;
+        return Math.round((selfReactionsCount / sessionData.length) * 100);
+    }
 
     // Обработчик события click для кнопки "Сохранить сессию"
     saveSessionButton.addEventListener('click', function() {
@@ -204,7 +243,7 @@ document.addEventListener('DOMContentLoaded', function() {
         const dateInput = inputs[0].value;
         const method = inputs[1].value;
         const phase = inputs[2].value;
-        const sessionData = Array.from(inputs).slice(3).map(input => input.value);
+        const sessionData = Array.from(inputs).slice(3, 13).map(input => input.value.charAt(0));
 
         // Проверяем, что дата введена и корректно преобразована
         let date;
@@ -228,11 +267,15 @@ document.addEventListener('DOMContentLoaded', function() {
         // Форматируем дату в формат dd.MM.yyyy
         const formattedDate = date.toLocaleDateString('ru-RU', { day: '2-digit', month: '2-digit', year: 'numeric' });
 
+        // Вызываем функцию countPercentSelfReactions
+        const percentSelfReactions = countPercentSelfReactions(sessionData);
+
         const session = {
             date: formattedDate, // Используем формат dd.MM.yyyy
             methodName: method,
             phaseName: phase,
-            session: sessionData.map(value => value.charAt(0)),
+            session: sessionData,
+            percentSelfReactions: percentSelfReactions, // Добавляем процент самостоятельных реакций
             childId: id_child // Добавляем child_id в объект сессии
         };
 
@@ -267,61 +310,65 @@ document.addEventListener('DOMContentLoaded', function() {
     });
 
     // Обработчик события click для кнопки "Показать все сессии"
-   showAllSessionsButton.addEventListener('click', function() {
-   console.log(id_child)
-       if (!id_child) {
-           alert('Ребенок не выбран');
-           return;
-       }
+    showAllSessionsButton.addEventListener('click', function() {
+        console.log(id_child);
+        if (!id_child) {
+            alert('Ребенок не выбран');
+            return;
+        }
 
-       fetch(`http://localhost:8080/sessions?childId=${id_child}`, {
-           method: 'GET',
-           headers: {
-               'Content-Type': 'application/json'
-           }
-       })
-       .then(response => {
-           if (!response.ok) {
-               return response.text().then(text => {
-                   throw new Error(`Network response was not ok: ${text}`);
-               });
-           }
-           return response.json();
-       })
-       .then(sessions => {
-           // Создаем новую вкладку и отображаем сессии
-           const newWindow = window.open('', '_blank');
-           newWindow.document.write('<html><head><title>Сессии</title></head><body>');
-           newWindow.document.write('<h1>Сессии ребенка</h1>');
-           newWindow.document.write('<table border="1"><tr><th>Дата</th><th>Метод</th><th>Этап</th><th>Столбец 1</th><th>Столбец 2</th><th>Столбец 3</th><th>Столбец 4</th><th>Столбец 5</th><th>Столбец 6</th><th>Столбец 7</th><th>Столбец 8</th><th>Столбец 9</th><th>Столбец 10</th></tr>');
+        fetch(`http://localhost:8080/sessions?childId=${id_child}`, {
+            method: 'GET',
+            headers: {
+                'Content-Type': 'application/json'
+            }
+        })
+        .then(response => {
+            if (!response.ok) {
+                return response.text().then(text => {
+                    throw new Error(`Network response was not ok: ${text}`);
+                });
+            }
+            return response.json();
+        })
+        .then(sessions => {
+            // Создаем новую вкладку и отображаем сессии
+            const newWindow = window.open('', '_blank');
+            newWindow.document.write('<html><head><title>Сессии</title></head><body>');
+            newWindow.document.write('<h1>Сессии ребенка</h1>');
+            newWindow.document.write('<table border="1"><tr><th>Дата</th><th>Метод</th><th>Этап</th><th>Столбец 1</th><th>Столбец 2</th><th>Столбец 3</th><th>Столбец 4</th><th>Столбец 5</th><th>Столбец 6</th><th>Столбец 7</th><th>Столбец 8</th><th>Столбец 9</th><th>Столбец 10</th><th>Процент СР</th></tr>');
 
-           sessions.forEach(session => {
-               newWindow.document.write('<tr>');
+            sessions.forEach(session => {
+                newWindow.document.write('<tr>');
 
-               // Проверяем, что поле date существует и не является null или undefined
-               if (session.date) {
-                   // Преобразуем дату в формат, который может быть корректно обработан new Date()
-                   const dateParts = session.date.split('.');
-                   const formattedDate = new Date(dateParts[2], dateParts[1] - 1, dateParts[0]).toLocaleDateString();
-                   newWindow.document.write(`<td>${formattedDate}</td>`); // Отображаем дату сессии
-               } else {
-                   newWindow.document.write('<td>Дата не указана</td>'); // Если поле date отсутствует, отображаем сообщение
-               }
+                // Проверяем, что поле date существует и не является null или undefined
+                if (session.date) {
+                    // Преобразуем дату в формат, который может быть корректно обработан new Date()
+                    const dateParts = session.date.split('.');
+                    const formattedDate = new Date(dateParts[2], dateParts[1] - 1, dateParts[0]).toLocaleDateString();
+                    newWindow.document.write(`<td>${formattedDate}</td>`); // Отображаем дату сессии
+                } else {
+                    newWindow.document.write('<td>Дата не указана</td>'); // Если поле date отсутствует, отображаем сообщение
+                }
 
-               newWindow.document.write(`<td>${session.methodName}</td>`);
-               newWindow.document.write(`<td>${session.phaseName}</td>`);
-               session.session.forEach(value => {
-                   newWindow.document.write(`<td>${value}</td>`);
-               });
-               newWindow.document.write('</tr>');
-           });
+                newWindow.document.write(`<td>${session.methodName}</td>`);
+                newWindow.document.write(`<td>${session.phaseName}</td>`);
+                session.session.forEach(value => {
+                    newWindow.document.write(`<td>${value}</td>`);
+                });
 
-           newWindow.document.write('</table></body></html>');
-           newWindow.document.close();
-       })
-       .catch(error => {
-           console.error('There was a problem with the fetch operation:', error);
-           alert('Ошибка при получении сессий');
-       });
-   });
-   });
+                // Добавляем процент самостоятельных реакций
+                newWindow.document.write(`<td>${session.percentSelfReactions}%</td>`);
+
+                newWindow.document.write('</tr>');
+            });
+
+            newWindow.document.write('</table></body></html>');
+            newWindow.document.close();
+        })
+        .catch(error => {
+            console.error('There was a problem with the fetch operation:', error);
+            alert('Ошибка при получении сессий');
+        });
+        });
+    });
