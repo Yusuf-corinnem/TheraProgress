@@ -1,5 +1,6 @@
 package com.stok_team.TheraProgress.models;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 
 import java.util.Date;
@@ -25,6 +26,7 @@ public class Child {
     @Column(name = "promptView")
     private String promptView;
     @OneToMany(mappedBy = "child")
+    @JsonIgnore
     private List<Session> sessions;
 
     public Child() {
