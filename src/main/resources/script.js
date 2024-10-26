@@ -8,29 +8,34 @@ document.addEventListener('DOMContentLoaded', function() {
 
     let id_child = null; // Переменная для хранения ID выбранного ребенка
 
-    // Загрузка списка детей
-    fetch('http://localhost:8080/children', {
-        method: 'GET',
-        headers: {
-            'Content-Type': 'application/json'
-        }
-    })
-    .then(response => {
-        if (!response.ok) {
-            return response.text().then(text => {
-                throw new Error(`Network response was not ok: ${text}`);
-            });
-        }
-        return response.json();
-    })
-    .then(data => {
-        if (!Array.isArray(data)) {
-            throw new TypeError('Expected an array of children');
-        }
+    // Функции
+    function loadChildren() {
+        return fetch('http://localhost:8080/children', {
+            method: 'GET',
+            headers: {
+                'Content-Type': 'application/json'
+            }
+        })
+        .then(response => {
+            if (!response.ok) {
+                return response.text().then(text => {
+                    throw new Error(`Network response was not ok: ${text}`);
+                });
+            }
+            return response.json();
+        })
+        .then(data => {
+            if (!Array.isArray(data)) {
+                throw new TypeError('Expected an array of children');
+            }
+            return data;
+        });
+    }
 
+    function displayChildren(children) {
         selectElement.innerHTML = '';
 
-        data.forEach(child => {
+        children.forEach(child => {
             const option = document.createElement('option');
             option.value = child.id;
 
@@ -45,30 +50,10 @@ document.addEventListener('DOMContentLoaded', function() {
 
             selectElement.appendChild(option);
         });
-
-        const selectedChildId = selectElement.value;
-        if (selectedChildId) {
-            id_child = selectedChildId;
-            fetchChildInfo(selectedChildId);
-        }
-    })
-    .catch(error => {
-        console.error('There was a problem with the fetch operation:', error);
-    });
-
-    // Обработчик события change для выпадающего списка
-    selectElement.addEventListener('change', function() {
-        const childId = selectElement.value;
-        id_child = childId;
-        if (childId) {
-            fetchChildInfo(childId);
-        } else {
-            childInfoElement.innerHTML = '';
-        }
-    });
+    }
 
     function fetchChildInfo(childId) {
-        fetch(`http://localhost:8080/children/${childId}`, {
+        return fetch(`http://localhost:8080/children/${childId}`, {
             method: 'GET',
             headers: {
                 'Content-Type': 'application/json'
@@ -81,31 +66,28 @@ document.addEventListener('DOMContentLoaded', function() {
                 });
             }
             return response.json();
-        })
-        .then(child => {
-            let birthDateString = '';
-            if (child.birth) {
-                const birthDateParts = child.birth.split('.');
-                const birthDate = new Date(birthDateParts[2], birthDateParts[1] - 1, birthDateParts[0]);
-                if (!isNaN(birthDate.getTime())) {
-                    birthDateString = birthDate.toLocaleDateString();
-                }
-            }
-
-            childInfoElement.innerHTML = `
-                <h2>${child.lastName} ${child.firstName} ${child.secondName}</h2>
-                <p>Birth: ${birthDateString}</p>
-                <p>Method: ${child.method}</p>
-                <p>Prompt: ${child.prompt}</p>
-            `;
-        })
-        .catch(error => {
-            console.error('There was a problem with the fetch operation:', error);
         });
     }
 
-    // Обработчик события click для кнопки "Добавить сессию"
-    addSessionButton.addEventListener('click', function() {
+    function displayChildInfo(child) {
+        let birthDateString = '';
+        if (child.birth) {
+            const birthDateParts = child.birth.split('.');
+            const birthDate = new Date(birthDateParts[2], birthDateParts[1] - 1, birthDateParts[0]);
+            if (!isNaN(birthDate.getTime())) {
+                birthDateString = birthDate.toLocaleDateString();
+            }
+        }
+
+        childInfoElement.innerHTML = `
+            <h2>${child.lastName} ${child.firstName} ${child.secondName}</h2>
+            <p>Birth: ${birthDateString}</p>
+            <p>Method: ${child.method}</p>
+            <p>Prompt: ${child.prompt}</p>
+        `;
+    }
+
+    function createSessionTable() {
         const table = document.createElement('table');
         table.style.borderCollapse = 'collapse';
         table.style.width = '100%';
@@ -128,16 +110,15 @@ document.addEventListener('DOMContentLoaded', function() {
                 select.style.width = '100%';
                 select.style.boxSizing = 'border-box';
 
-                // Добавляем опции для выпадающего списка
                 const methods = [
-                'DTT',
-                'Формирование реакции',
-                'NET',
-                'Обучение обратной цепочке',
-                'Обучение целой цепочке',
-                'Обучение прямой цепочке',
-                'Формирование реакции',
-                'Формирование условной дискриминации'
+                    'DTT',
+                    'Формирование реакции',
+                    'NET',
+                    'Обучение обратной цепочке',
+                    'Обучение целой цепочке',
+                    'Обучение прямой цепочке',
+                    'Формирование реакции',
+                    'Формирование условной дискриминации'
                 ];
                 methods.forEach(method => {
                     const option = document.createElement('option');
@@ -158,7 +139,6 @@ document.addEventListener('DOMContentLoaded', function() {
                 select.style.width = '100%';
                 select.style.boxSizing = 'border-box';
 
-                // Добавляем опции для выпадающего списка
                 const options = ['С', 'Н', '+'];
                 options.forEach(optionText => {
                     const option = document.createElement('option');
@@ -175,32 +155,32 @@ document.addEventListener('DOMContentLoaded', function() {
             inputRow.appendChild(inputCell);
         });
 
-        sessionTableContainer.innerHTML = '';
-        sessionTableContainer.appendChild(table);
-    });
-
-    function updatePercentSelfReactions() {
-        const table = sessionTableContainer.querySelector('table');
-        if (!table) return;
-
-        const inputs = table.querySelectorAll('input');
-        if (inputs.length !== 13) return;
-
-        const sessionData = Array.from(inputs).slice(3, 13).map(input => input.value.charAt(0));
-        const percentSelfReactions = countPercentSelfReactions(sessionData);
-
-        const percentCell = table.rows[1].cells[13];
-        percentCell.textContent = percentSelfReactions + '%';
+        return table;
     }
 
-    function countPercentSelfReactions(sessionData) {
-        const selfReactionChar = 'c';
-        const selfReactionsCount = sessionData.filter(value => value.toLowerCase() === selfReactionChar).length;
-        return Math.round((selfReactionsCount / sessionData.length) * 100);
-    }
+//    Переделать
+     function updatePercentSelfReactions() {
+            const table = sessionTableContainer.querySelector('table');
+            if (!table) return;
 
-    // Обработчик события click для кнопки "Сохранить сессию"
-    saveSessionButton.addEventListener('click', function() {
+            const inputs = table.querySelectorAll('input');
+            if (inputs.length !== 13) return;
+
+            const sessionData = Array.from(inputs).slice(3, 13).map(input => input.value.charAt(0));
+            const percentSelfReactions = countPercentSelfReactions(sessionData);
+
+            const percentCell = table.rows[1].cells[13];
+            percentCell.textContent = percentSelfReactions + '%';
+        }
+        
+//    Переделать
+        function countPercentSelfReactions(sessionData) {
+            const selfReactionChar = 'c';
+            const selfReactionsCount = sessionData.filter(value => value.toLowerCase() === selfReactionChar).length;
+            return Math.round((selfReactionsCount / sessionData.length) * 100);
+        }
+
+    function saveSession() {
         const table = sessionTableContainer.querySelector('table');
         if (!table) {
             alert('Таблица не найдена');
@@ -276,10 +256,9 @@ document.addEventListener('DOMContentLoaded', function() {
             console.error('There was a problem with the fetch operation:', error);
             alert('Ошибка при сохранении сессии');
         });
-    });
+    }
 
-    // Обработчик события click для кнопки "Показать все сессии"
-    showAllSessionsButton.addEventListener('click', function() {
+    function showAllSessions() {
         if (!id_child) {
             alert('Ребенок не выбран');
             return;
@@ -334,5 +313,43 @@ document.addEventListener('DOMContentLoaded', function() {
             console.error('There was a problem with the fetch operation:', error);
             alert('Ошибка при получении сессий');
         });
+    }
+
+    // Загрузка списка детей
+    loadChildren()
+        .then(children => {
+            displayChildren(children);
+            const selectedChildId = selectElement.value;
+            if (selectedChildId) {
+                id_child = selectedChildId;
+                fetchChildInfo(selectedChildId).then(displayChildInfo);
+            }
+        })
+        .catch(error => {
+            console.error('There was a problem with the fetch operation:', error);
+        });
+
+    // Обработчик события change для выпадающего списка
+    selectElement.addEventListener('change', function() {
+        const childId = selectElement.value;
+        id_child = childId;
+        if (childId) {
+            fetchChildInfo(childId).then(displayChildInfo);
+        } else {
+            childInfoElement.innerHTML = '';
+        }
     });
+
+    // Обработчик события click для кнопки "Добавить сессию"
+    addSessionButton.addEventListener('click', function() {
+        const table = createSessionTable();
+        sessionTableContainer.innerHTML = '';
+        sessionTableContainer.appendChild(table);
+    });
+
+    // Обработчик события click для кнопки "Сохранить сессию"
+    saveSessionButton.addEventListener('click', saveSession);
+
+    // Обработчик события click для кнопки "Показать все сессии"
+    showAllSessionsButton.addEventListener('click', showAllSessions);
 });
