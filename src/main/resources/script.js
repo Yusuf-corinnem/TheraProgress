@@ -326,7 +326,7 @@ function showAllSessions() {
             const formattedDate = new Date(dateParts[2], dateParts[1] - 1, dateParts[0]).toLocaleDateString();
             return {
                 Дата: formattedDate,
-                ПроцентСР: session.percentSelfReactions
+                Процент_СР: session.percentSelfReactions
             };
         });
 
