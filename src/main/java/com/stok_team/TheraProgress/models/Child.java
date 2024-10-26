@@ -1,5 +1,6 @@
 package com.stok_team.TheraProgress.models;
 
+import com.fasterxml.jackson.annotation.JsonFormat;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 
@@ -20,11 +21,12 @@ public class Child {
     @Column(name = "secondName")
     private String secondName;
     @Column(name = "birth")
+    @JsonFormat(pattern="dd.MM.yyyy")
     private Date birth;
-    @Column(name = "methodView")
-    private String methodView;
-    @Column(name = "promptView")
-    private String promptView;
+    @Column(name = "method")
+    private String method;
+    @Column(name = "prompt")
+    private String prompt;
     @OneToMany(mappedBy = "child")
     @JsonIgnore
     private List<Session> sessions;
@@ -32,13 +34,13 @@ public class Child {
     public Child() {
     }
 
-    public Child(String firstName, String lastName, String secondName, Date birth, String methodView, String promptView) {
+    public Child(String firstName, String lastName, String secondName, Date birth, String method, String prompt) {
         this.firstName = firstName;
         this.lastName = lastName;
         this.secondName = secondName;
         this.birth = birth;
-        this.methodView = methodView;
-        this.promptView = promptView;
+        this.method = method;
+        this.prompt = prompt;
     }
 
     public UUID getId() {
@@ -81,20 +83,20 @@ public class Child {
         this.birth = birth;
     }
 
-    public String getMethodView() {
-        return methodView;
+    public String getMethod() {
+        return method;
     }
 
-    public void setMethodView(String methodView) {
-        this.methodView = methodView;
+    public void setMethod(String method) {
+        this.method = method;
     }
 
-    public String getPromptView() {
-        return promptView;
+    public String getPrompt() {
+        return prompt;
     }
 
-    public void setPromptView(String promptView) {
-        this.promptView = promptView;
+    public void setPrompt(String prompt) {
+        this.prompt = prompt;
     }
 
     public List<Session> getSessions() {

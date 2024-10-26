@@ -32,7 +32,24 @@ document.addEventListener('DOMContentLoaded', function() {
         data.forEach(child => {
             const option = document.createElement('option');
             option.value = child.id;
-            option.text = `${child.lastName} ${child.firstName} ${child.secondName}`;
+
+            // Проверяем, что поле birth существует и не является null или undefined
+            if (child.birth) {
+                // Преобразуем строку даты в объект Date
+                const birthDateParts = child.birth.split('.');
+                const birthDate = new Date(birthDateParts[2], birthDateParts[1] - 1, birthDateParts[0]);
+
+                // Форматируем дату
+                const formattedBirthDate = birthDate.toLocaleDateString();
+
+                // Устанавливаем текст опции
+                option.text = `${child.lastName} ${child.firstName} ${child.secondName} - ${formattedBirthDate}`;
+            } else {
+                // Если поле birth отсутствует, устанавливаем текст опции без даты
+                option.text = `${child.lastName} ${child.firstName} ${child.secondName}`;
+            }
+
+            // Добавляем опцию в селект элемент
             selectElement.appendChild(option);
         });
 
@@ -55,12 +72,26 @@ document.addEventListener('DOMContentLoaded', function() {
                 return response.json();
             })
             .then(child => {
+                // Проверяем, что поле birth существует и не является null или undefined
+                let birthDateString = '';
+                if (child.birth) {
+                    // Преобразуем строку даты в объект Date
+                    const birthDateParts = child.birth.split('.');
+                    const birthDate = new Date(birthDateParts[2], birthDateParts[1] - 1, birthDateParts[0]);
+
+                    // Проверяем, что дата корректно преобразована
+                    if (!isNaN(birthDate.getTime())) {
+                        // Форматируем дату
+                        birthDateString = birthDate.toLocaleDateString();
+                    }
+                }
+
                 // Отображаем информацию о ребенке
                 childInfoElement.innerHTML = `
                     <h2>${child.lastName} ${child.firstName} ${child.secondName}</h2>
-                    <p>Birth: ${new Date(child.birth).toLocaleDateString()}</p>
-                    <p>Method View: ${child.methodView}</p>
-                    <p>Prompt View: ${child.promptView}</p>
+                    <p>Birth: ${birthDateString}</p>
+                    <p>Method: ${child.method}</p>
+                    <p>Prompt: ${child.prompt}</p>
                 `;
             })
             .catch(error => {
@@ -93,12 +124,26 @@ document.addEventListener('DOMContentLoaded', function() {
                 return response.json();
             })
             .then(child => {
+                // Проверяем, что поле birth существует и не является null или undefined
+                let birthDateString = '';
+                if (child.birth) {
+                    // Преобразуем строку даты в объект Date
+                    const birthDateParts = child.birth.split('.');
+                    const birthDate = new Date(birthDateParts[2], birthDateParts[1] - 1, birthDateParts[0]);
+
+                    // Проверяем, что дата корректно преобразована
+                    if (!isNaN(birthDate.getTime())) {
+                        // Форматируем дату
+                        birthDateString = birthDate.toLocaleDateString();
+                    }
+                }
+
                 // Отображаем информацию о ребенке
                 childInfoElement.innerHTML = `
                     <h2>${child.lastName} ${child.firstName} ${child.secondName}</h2>
-                    <p>Birth: ${new Date(child.birth).toLocaleDateString()}</p>
-                    <p>Method View: ${child.methodView}</p>
-                    <p>Prompt View: ${child.promptView}</p>
+                    <p>Birth: ${birthDateString}</p>
+                    <p>Method: ${child.method}</p>
+                    <p>Prompt: ${child.prompt}</p>
                 `;
             })
             .catch(error => {
