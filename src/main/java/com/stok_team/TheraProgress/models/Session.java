@@ -1,5 +1,6 @@
 package com.stok_team.TheraProgress.models;
 
+import com.fasterxml.jackson.annotation.JsonFormat;
 import jakarta.persistence.*;
 
 import java.util.ArrayList;
@@ -19,6 +20,7 @@ public class Session {
     private UUID id;
 
     @Column(name = "date")
+    @JsonFormat(pattern="dd.MM.yyyy")
     private Date date;
 
     @Column(name = "session")

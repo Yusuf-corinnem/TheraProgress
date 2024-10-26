@@ -1,11 +1,10 @@
-let id_child;
-
 document.addEventListener('DOMContentLoaded', function() {
     const selectElement = document.getElementById('children-select');
     const childInfoElement = document.getElementById('child-info');
     const addSessionButton = document.getElementById('add-session-button');
     const saveSessionButton = document.getElementById('save-session-button');
     const sessionTableContainer = document.getElementById('session-table-container');
+    const showAllSessionsButton = document.getElementById('show-all-sessions-button'); // Добавляем ссылку на кнопку
 
     // Загрузка списка детей
     fetch('http://localhost:8080/children', {
@@ -202,13 +201,35 @@ document.addEventListener('DOMContentLoaded', function() {
             return;
         }
 
-        const date = inputs[0].value;
+        const dateInput = inputs[0].value;
         const method = inputs[1].value;
         const phase = inputs[2].value;
         const sessionData = Array.from(inputs).slice(3).map(input => input.value);
 
+        // Проверяем, что дата введена и корректно преобразована
+        let date;
+        if (dateInput) {
+            const dateParts = dateInput.split('.');
+            if (dateParts.length === 3) {
+                date = new Date(dateParts[2], dateParts[1] - 1, dateParts[0]);
+                if (isNaN(date.getTime())) {
+                    alert('Неверный формат даты');
+                    return;
+                }
+            } else {
+                alert('Неверный формат даты');
+                return;
+            }
+        } else {
+            alert('Дата не введена');
+            return;
+        }
+
+        // Форматируем дату в формат dd.MM.yyyy
+        const formattedDate = date.toLocaleDateString('ru-RU', { day: '2-digit', month: '2-digit', year: 'numeric' });
+
         const session = {
-            date: new Date(date),
+            date: formattedDate, // Используем формат dd.MM.yyyy
             methodName: method,
             phaseName: phase,
             session: sessionData.map(value => value.charAt(0)),
@@ -244,4 +265,62 @@ document.addEventListener('DOMContentLoaded', function() {
             alert('Ошибка при сохранении сессии');
         });
     });
-});
+
+    // Обработчик события click для кнопки "Показать все сессии"
+   showAllSessionsButton.addEventListener('click', function() {
+       if (!id_child) {
+           alert('Ребенок не выбран');
+           return;
+       }
+
+       fetch(`http://localhost:8080/sessions?childId=${id_child}`, {
+           method: 'GET',
+           headers: {
+               'Content-Type': 'application/json'
+           }
+       })
+       .then(response => {
+           if (!response.ok) {
+               return response.text().then(text => {
+                   throw new Error(`Network response was not ok: ${text}`);
+               });
+           }
+           return response.json();
+       })
+       .then(sessions => {
+           // Создаем новую вкладку и отображаем сессии
+           const newWindow = window.open('', '_blank');
+           newWindow.document.write('<html><head><title>Сессии</title></head><body>');
+           newWindow.document.write('<h1>Сессии ребенка</h1>');
+           newWindow.document.write('<table border="1"><tr><th>Дата</th><th>Метод</th><th>Этап</th><th>Столбец 1</th><th>Столбец 2</th><th>Столбец 3</th><th>Столбец 4</th><th>Столбец 5</th><th>Столбец 6</th><th>Столбец 7</th><th>Столбец 8</th><th>Столбец 9</th><th>Столбец 10</th></tr>');
+
+           sessions.forEach(session => {
+               newWindow.document.write('<tr>');
+
+               // Проверяем, что поле date существует и не является null или undefined
+               if (session.date) {
+                   // Преобразуем дату в формат, который может быть корректно обработан new Date()
+                   const dateParts = session.date.split('.');
+                   const formattedDate = new Date(dateParts[2], dateParts[1] - 1, dateParts[0]).toLocaleDateString();
+                   newWindow.document.write(`<td>${formattedDate}</td>`); // Отображаем дату сессии
+               } else {
+                   newWindow.document.write('<td>Дата не указана</td>'); // Если поле date отсутствует, отображаем сообщение
+               }
+
+               newWindow.document.write(`<td>${session.methodName}</td>`);
+               newWindow.document.write(`<td>${session.phaseName}</td>`);
+               session.session.forEach(value => {
+                   newWindow.document.write(`<td>${value}</td>`);
+               });
+               newWindow.document.write('</tr>');
+           });
+
+           newWindow.document.write('</table></body></html>');
+           newWindow.document.close();
+       })
+       .catch(error => {
+           console.error('There was a problem with the fetch operation:', error);
+           alert('Ошибка при получении сессий');
+       });
+   });
+   });
