@@ -4,7 +4,9 @@ document.addEventListener('DOMContentLoaded', function() {
     const addSessionButton = document.getElementById('add-session-button');
     const saveSessionButton = document.getElementById('save-session-button');
     const sessionTableContainer = document.getElementById('session-table-container');
-    const showAllSessionsButton = document.getElementById('show-all-sessions-button'); // Добавляем ссылку на кнопку
+    const showAllSessionsButton = document.getElementById('show-all-sessions-button');
+
+    let id_child = null; // Переменная для хранения ID выбранного ребенка
 
     // Загрузка списка детей
     fetch('http://localhost:8080/children', {
@@ -32,70 +34,22 @@ document.addEventListener('DOMContentLoaded', function() {
             const option = document.createElement('option');
             option.value = child.id;
 
-            // Проверяем, что поле birth существует и не является null или undefined
             if (child.birth) {
-                // Преобразуем строку даты в объект Date
                 const birthDateParts = child.birth.split('.');
                 const birthDate = new Date(birthDateParts[2], birthDateParts[1] - 1, birthDateParts[0]);
-
-                // Форматируем дату
                 const formattedBirthDate = birthDate.toLocaleDateString();
-
-                // Устанавливаем текст опции
                 option.text = `${child.lastName} ${child.firstName} ${child.secondName} - ${formattedBirthDate}`;
             } else {
-                // Если поле birth отсутствует, устанавливаем текст опции без даты
                 option.text = `${child.lastName} ${child.firstName} ${child.secondName}`;
             }
 
-            // Добавляем опцию в селект элемент
             selectElement.appendChild(option);
         });
 
-        // Проверяем, есть ли уже выбранный ребенок
         const selectedChildId = selectElement.value;
         if (selectedChildId) {
             id_child = selectedChildId;
-            fetch(`http://localhost:8080/children/${selectedChildId}`, {
-                method: 'GET',
-                headers: {
-                    'Content-Type': 'application/json'
-                }
-            })
-            .then(response => {
-                if (!response.ok) {
-                    return response.text().then(text => {
-                        throw new Error(`Network response was not ok: ${text}`);
-                    });
-                }
-                return response.json();
-            })
-            .then(child => {
-                // Проверяем, что поле birth существует и не является null или undefined
-                let birthDateString = '';
-                if (child.birth) {
-                    // Преобразуем строку даты в объект Date
-                    const birthDateParts = child.birth.split('.');
-                    const birthDate = new Date(birthDateParts[2], birthDateParts[1] - 1, birthDateParts[0]);
-
-                    // Проверяем, что дата корректно преобразована
-                    if (!isNaN(birthDate.getTime())) {
-                        // Форматируем дату
-                        birthDateString = birthDate.toLocaleDateString();
-                    }
-                }
-
-                // Отображаем информацию о ребенке
-                childInfoElement.innerHTML = `
-                    <h2>${child.lastName} ${child.firstName} ${child.secondName}</h2>
-                    <p>Birth: ${birthDateString}</p>
-                    <p>Method: ${child.method}</p>
-                    <p>Prompt: ${child.prompt}</p>
-                `;
-            })
-            .catch(error => {
-                console.error('There was a problem with the fetch operation:', error);
-            });
+            fetchChildInfo(selectedChildId);
         }
     })
     .catch(error => {
@@ -106,54 +60,51 @@ document.addEventListener('DOMContentLoaded', function() {
     selectElement.addEventListener('change', function() {
         const childId = selectElement.value;
         id_child = childId;
-        console.log('Selected child ID:', id_child); // Добавляем отладочное сообщение
         if (childId) {
-            fetch(`http://localhost:8080/children/${childId}`, {
-                method: 'GET',
-                headers: {
-                    'Content-Type': 'application/json'
-                }
-            })
-            .then(response => {
-                if (!response.ok) {
-                    return response.text().then(text => {
-                        throw new Error(`Network response was not ok: ${text}`);
-                    });
-                }
-                return response.json();
-            })
-            .then(child => {
-                // Проверяем, что поле birth существует и не является null или undefined
-                let birthDateString = '';
-                if (child.birth) {
-                    // Преобразуем строку даты в объект Date
-                    const birthDateParts = child.birth.split('.');
-                    const birthDate = new Date(birthDateParts[2], birthDateParts[1] - 1, birthDateParts[0]);
-
-                    // Проверяем, что дата корректно преобразована
-                    if (!isNaN(birthDate.getTime())) {
-                        // Форматируем дату
-                        birthDateString = birthDate.toLocaleDateString();
-                    }
-                }
-
-                // Отображаем информацию о ребенке
-                childInfoElement.innerHTML = `
-                    <h2>${child.lastName} ${child.firstName} ${child.secondName}</h2>
-                    <p>Birth: ${birthDateString}</p>
-                    <p>Method: ${child.method}</p>
-                    <p>Prompt: ${child.prompt}</p>
-                `;
-            })
-            .catch(error => {
-                console.error('There was a problem with the fetch operation:', error);
-            });
+            fetchChildInfo(childId);
         } else {
-            // Очищаем информацию, если ничего не выбрано
             childInfoElement.innerHTML = '';
         }
     });
 
+    function fetchChildInfo(childId) {
+        fetch(`http://localhost:8080/children/${childId}`, {
+            method: 'GET',
+            headers: {
+                'Content-Type': 'application/json'
+            }
+        })
+        .then(response => {
+            if (!response.ok) {
+                return response.text().then(text => {
+                    throw new Error(`Network response was not ok: ${text}`);
+                });
+            }
+            return response.json();
+        })
+        .then(child => {
+            let birthDateString = '';
+            if (child.birth) {
+                const birthDateParts = child.birth.split('.');
+                const birthDate = new Date(birthDateParts[2], birthDateParts[1] - 1, birthDateParts[0]);
+                if (!isNaN(birthDate.getTime())) {
+                    birthDateString = birthDate.toLocaleDateString();
+                }
+            }
+
+            childInfoElement.innerHTML = `
+                <h2>${child.lastName} ${child.firstName} ${child.secondName}</h2>
+                <p>Birth: ${birthDateString}</p>
+                <p>Method: ${child.method}</p>
+                <p>Prompt: ${child.prompt}</p>
+            `;
+        })
+        .catch(error => {
+            console.error('There was a problem with the fetch operation:', error);
+        });
+    }
+
+    // Обработчик события click для кнопки "Добавить сессию"
     // Обработчик события click для кнопки "Добавить сессию"
     addSessionButton.addEventListener('click', function() {
         const table = document.createElement('table');
@@ -161,7 +112,7 @@ document.addEventListener('DOMContentLoaded', function() {
         table.style.width = '100%';
 
         const headerRow = table.insertRow();
-        const headers = ['Дата', 'Метод', 'Этап', 'Столбец 1', 'Столбец 2', 'Столбец 3', 'Столбец 4', 'Столбец 5', 'Столбец 6', 'Столбец 7', 'Столбец 8', 'Столбец 9', 'Столбец 10', 'Процент СР'];
+        const headers = ['Дата', 'Метод', 'Этап', 'Столбец 1', 'Столбец 2', 'Столбец 3', 'Столбец 4', 'Столбец 5', 'Столбец 6', 'Столбец 7', 'Столбец 8', 'Столбец 9', 'Столбец 10'];
         headers.forEach(headerText => {
             const headerCell = document.createElement('th');
             headerCell.textContent = headerText;
@@ -179,13 +130,12 @@ document.addEventListener('DOMContentLoaded', function() {
                 input.style.width = '100%';
                 input.style.boxSizing = 'border-box';
                 inputCell.appendChild(input);
-            } else if (index === 13) {
-                inputCell.textContent = '0%'; // Инициализируем ячейку "Процент СР"
             } else {
                 const input = document.createElement('input');
                 input.type = 'text';
                 input.style.width = '100%';
                 input.style.boxSizing = 'border-box';
+                input.addEventListener('input', updatePercentSelfReactions);
                 inputCell.appendChild(input);
             }
             inputCell.style.border = '1px solid black';
@@ -195,30 +145,21 @@ document.addEventListener('DOMContentLoaded', function() {
 
         sessionTableContainer.innerHTML = '';
         sessionTableContainer.appendChild(table);
-
-        const calculatePercentButton = document.createElement('button');
-        calculatePercentButton.textContent = 'Посчитать процент';
-        calculatePercentButton.style.marginTop = '10px';
-        sessionTableContainer.appendChild(calculatePercentButton);
-
-        // Обработчик события click для кнопки "Посчитать процент"
-        calculatePercentButton.addEventListener('click', function() {
-            const inputs = table.querySelectorAll('input');
-            if (inputs.length !== 13) {
-                alert('Неверное количество полей в таблице');
-                return;
-            }
-
-            const sessionData = Array.from(inputs).slice(3, 13).map(input => input.value.charAt(0));
-
-            // Вызываем функцию countPercentSelfReactions
-            const percentSelfReactions = countPercentSelfReactions(sessionData);
-
-            // Обновляем ячейку "Процент СР"
-            const percentCell = inputRow.cells[13];
-            percentCell.textContent = percentSelfReactions + '%';
-        });
     });
+
+    function updatePercentSelfReactions() {
+        const table = sessionTableContainer.querySelector('table');
+        if (!table) return;
+
+        const inputs = table.querySelectorAll('input');
+        if (inputs.length !== 13) return;
+
+        const sessionData = Array.from(inputs).slice(3, 13).map(input => input.value.charAt(0));
+        const percentSelfReactions = countPercentSelfReactions(sessionData);
+
+        const percentCell = table.rows[1].cells[13];
+        percentCell.textContent = percentSelfReactions + '%';
+    }
 
     function countPercentSelfReactions(sessionData) {
         const selfReactionChar = 'c';
@@ -226,6 +167,7 @@ document.addEventListener('DOMContentLoaded', function() {
         return Math.round((selfReactionsCount / sessionData.length) * 100);
     }
 
+    // Обработчик события click для кнопки "Сохранить сессию"
     // Обработчик события click для кнопки "Сохранить сессию"
     saveSessionButton.addEventListener('click', function() {
         const table = sessionTableContainer.querySelector('table');
@@ -245,7 +187,6 @@ document.addEventListener('DOMContentLoaded', function() {
         const phase = inputs[2].value;
         const sessionData = Array.from(inputs).slice(3, 13).map(input => input.value.charAt(0));
 
-        // Проверяем, что дата введена и корректно преобразована
         let date;
         if (dateInput) {
             const dateParts = dateInput.split('.');
@@ -264,22 +205,18 @@ document.addEventListener('DOMContentLoaded', function() {
             return;
         }
 
-        // Форматируем дату в формат dd.MM.yyyy
         const formattedDate = date.toLocaleDateString('ru-RU', { day: '2-digit', month: '2-digit', year: 'numeric' });
-
-        // Вызываем функцию countPercentSelfReactions
         const percentSelfReactions = countPercentSelfReactions(sessionData);
 
         const session = {
-            date: formattedDate, // Используем формат dd.MM.yyyy
+            date: formattedDate,
             methodName: method,
             phaseName: phase,
             session: sessionData,
-            percentSelfReactions: percentSelfReactions, // Добавляем процент самостоятельных реакций
-            childId: id_child // Добавляем child_id в объект сессии
+            percentSelfReactions: percentSelfReactions,
+            childId: id_child
         };
 
-        // Проверяем, что child_id не является null
         if (!id_child) {
             alert('Ребенок не выбран');
             return;
@@ -311,7 +248,6 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // Обработчик события click для кнопки "Показать все сессии"
     showAllSessionsButton.addEventListener('click', function() {
-        console.log(id_child);
         if (!id_child) {
             alert('Ребенок не выбран');
             return;
@@ -332,7 +268,6 @@ document.addEventListener('DOMContentLoaded', function() {
             return response.json();
         })
         .then(sessions => {
-            // Создаем новую вкладку и отображаем сессии
             const newWindow = window.open('', '_blank');
             newWindow.document.write('<html><head><title>Сессии</title></head><body>');
             newWindow.document.write('<h1>Сессии ребенка</h1>');
@@ -341,14 +276,12 @@ document.addEventListener('DOMContentLoaded', function() {
             sessions.forEach(session => {
                 newWindow.document.write('<tr>');
 
-                // Проверяем, что поле date существует и не является null или undefined
                 if (session.date) {
-                    // Преобразуем дату в формат, который может быть корректно обработан new Date()
                     const dateParts = session.date.split('.');
                     const formattedDate = new Date(dateParts[2], dateParts[1] - 1, dateParts[0]).toLocaleDateString();
-                    newWindow.document.write(`<td>${formattedDate}</td>`); // Отображаем дату сессии
+                    newWindow.document.write(`<td>${formattedDate}</td>`);
                 } else {
-                    newWindow.document.write('<td>Дата не указана</td>'); // Если поле date отсутствует, отображаем сообщение
+                    newWindow.document.write('<td>Дата не указана</td>');
                 }
 
                 newWindow.document.write(`<td>${session.methodName}</td>`);
@@ -357,7 +290,6 @@ document.addEventListener('DOMContentLoaded', function() {
                     newWindow.document.write(`<td>${value}</td>`);
                 });
 
-                // Добавляем процент самостоятельных реакций
                 newWindow.document.write(`<td>${session.percentSelfReactions}%</td>`);
 
                 newWindow.document.write('</tr>');
@@ -370,5 +302,5 @@ document.addEventListener('DOMContentLoaded', function() {
             console.error('There was a problem with the fetch operation:', error);
             alert('Ошибка при получении сессий');
         });
-        });
     });
+});
