@@ -261,62 +261,100 @@ function saveSession() {
     });
 }
 
-    function showAllSessions() {
-        if (!id_child) {
-            alert('Ребенок не выбран');
-            return;
+function showAllSessions() {
+    if (!id_child) {
+        alert('Ребенок не выбран');
+        return;
+    }
+
+    fetch(`http://localhost:8080/sessions?childId=${id_child}`, {
+        method: 'GET',
+        headers: {
+            'Content-Type': 'application/json'
         }
+    })
+    .then(response => {
+        if (!response.ok) {
+            return response.text().then(text => {
+                throw new Error(`Network response was not ok: ${text}`);
+            });
+        }
+        return response.json();
+    })
+    .then(sessions => {
+        // Сортировка сессий по дате
+        sessions.sort((a, b) => {
+            const dateA = new Date(a.date.split('.').reverse().join('-'));
+            const dateB = new Date(b.date.split('.').reverse().join('-'));
+            return dateA - dateB;
+        });
 
-        fetch(`http://localhost:8080/sessions?childId=${id_child}`, {
-            method: 'GET',
-            headers: {
-                'Content-Type': 'application/json'
+        const newWindow = window.open('', '_blank');
+        newWindow.document.write('<html><head><title>Сессии</title></head><body>');
+        newWindow.document.write('<h1>Сессии ребенка</h1>');
+        newWindow.document.write('<table border="1"><tr><th>Дата</th><th>Метод</th><th>Этап</th><th>Блок 1</th><th>Блок 2</th><th>Блок 3</th><th>Блок 4</th><th>Блок 5</th><th>Блок 6</th><th>Блок 7</th><th>Блок 8</th><th>Блок 9</th><th>Блок 10</th><th>Процент СР</th></tr>');
+
+        sessions.forEach(session => {
+            newWindow.document.write('<tr>');
+
+            if (session.date) {
+                const dateParts = session.date.split('.');
+                const formattedDate = new Date(dateParts[2], dateParts[1] - 1, dateParts[0]).toLocaleDateString();
+                newWindow.document.write(`<td>${formattedDate}</td>`);
+            } else {
+                newWindow.document.write('<td>Дата не указана</td>');
             }
-        })
-        .then(response => {
-            if (!response.ok) {
-                return response.text().then(text => {
-                    throw new Error(`Network response was not ok: ${text}`);
-                });
-            }
-            return response.json();
-        })
-        .then(sessions => {
-            const newWindow = window.open('', '_blank');
-            newWindow.document.write('<html><head><title>Сессии</title></head><body>');
-            newWindow.document.write('<h1>Сессии ребенка</h1>');
-            newWindow.document.write('<table border="1"><tr><th>Дата</th><th>Метод</th><th>Этап</th><th>Блок 1</th><th>Блок 2</th><th>Блок 3</th><th>Блок 4</th><th>Блок 5</th><th>Блок 6</th><th>Блок 7</th><th>Блок 8</th><th>Блок 9</th><th>Блок 10</th><th>Процент СР</th></tr>');
 
-            sessions.forEach(session => {
-                newWindow.document.write('<tr>');
-
-                if (session.date) {
-                    const dateParts = session.date.split('.');
-                    const formattedDate = new Date(dateParts[2], dateParts[1] - 1, dateParts[0]).toLocaleDateString();
-                    newWindow.document.write(`<td>${formattedDate}</td>`);
-                } else {
-                    newWindow.document.write('<td>Дата не указана</td>');
-                }
-
-                newWindow.document.write(`<td>${session.methodName}</td>`);
-                newWindow.document.write(`<td>${session.phaseName}</td>`);
-                session.session.forEach(value => {
-                    newWindow.document.write(`<td>${value}</td>`);
-                });
-
-                newWindow.document.write(`<td>${session.percentSelfReactions}%</td>`);
-
-                newWindow.document.write('</tr>');
+            newWindow.document.write(`<td>${session.methodName}</td>`);
+            newWindow.document.write(`<td>${session.phaseName}</td>`);
+            session.session.forEach(value => {
+                newWindow.document.write(`<td>${value}</td>`);
             });
 
-            newWindow.document.write('</table></body></html>');
-            newWindow.document.close();
-        })
-        .catch(error => {
-            console.error('There was a problem with the fetch operation:', error);
-            alert('Ошибка при получении сессий');
+            newWindow.document.write(`<td>${session.percentSelfReactions}%</td>`);
+
+            newWindow.document.write('</tr>');
         });
-    }
+
+        newWindow.document.write('</table>');
+        newWindow.document.write('</body></html>');
+        newWindow.document.close();
+
+        // Экспорт данных в файл .xlsx
+        const data = sessions.map(session => {
+            const dateParts = session.date.split('.');
+            const formattedDate = new Date(dateParts[2], dateParts[1] - 1, dateParts[0]).toLocaleDateString();
+            return {
+                Дата: formattedDate,
+                ПроцентСР: session.percentSelfReactions
+            };
+        });
+
+        const ws = XLSX.utils.json_to_sheet(data);
+        const wb = XLSX.utils.book_new();
+        XLSX.utils.book_append_sheet(wb, ws, 'Sessions');
+        const wbout = XLSX.write(wb, { bookType: 'xlsx', type: 'binary' });
+
+        function s2ab(s) {
+            const buf = new ArrayBuffer(s.length);
+            const view = new Uint8Array(buf);
+            for (let i = 0; i < s.length; i++) view[i] = s.charCodeAt(i) & 0xFF;
+            return buf;
+        }
+
+        const blob = new Blob([s2ab(wbout)], { type: 'application/octet-stream' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = 'sessions.xlsx';
+        a.click();
+        URL.revokeObjectURL(url);
+    })
+    .catch(error => {
+        console.error('There was a problem with the fetch operation:', error);
+        alert('Ошибка при получении сессий');
+    });
+}
 
     // Загрузка списка детей
     loadChildren()
