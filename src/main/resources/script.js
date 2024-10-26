@@ -105,14 +105,13 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     // Обработчик события click для кнопки "Добавить сессию"
-    // Обработчик события click для кнопки "Добавить сессию"
     addSessionButton.addEventListener('click', function() {
         const table = document.createElement('table');
         table.style.borderCollapse = 'collapse';
         table.style.width = '100%';
 
         const headerRow = table.insertRow();
-        const headers = ['Дата', 'Метод', 'Этап', 'Столбец 1', 'Столбец 2', 'Столбец 3', 'Столбец 4', 'Столбец 5', 'Столбец 6', 'Столбец 7', 'Столбец 8', 'Столбец 9', 'Столбец 10'];
+        const headers = ['Дата', 'Метод', 'Этап', 'Блок 1', 'Блок 2', 'Блок 3', 'Блок 4', 'Блок 5', 'Блок 6', 'Блок 7', 'Блок 8', 'Блок 9', 'Блок 10'];
         headers.forEach(headerText => {
             const headerCell = document.createElement('th');
             headerCell.textContent = headerText;
@@ -124,19 +123,52 @@ document.addEventListener('DOMContentLoaded', function() {
         const inputRow = table.insertRow();
         headers.forEach((headerText, index) => {
             const inputCell = document.createElement('td');
-            if (index < 3) {
+            if (index === 1) { // Метод
+                const select = document.createElement('select');
+                select.style.width = '100%';
+                select.style.boxSizing = 'border-box';
+
+                // Добавляем опции для выпадающего списка
+                const methods = [
+                'DTT',
+                'Формирование реакции',
+                'NET',
+                'Обучение обратной цепочке',
+                'Обучение целой цепочке',
+                'Обучение прямой цепочке',
+                'Формирование реакции',
+                'Формирование условной дискриминации'
+                ];
+                methods.forEach(method => {
+                    const option = document.createElement('option');
+                    option.value = method;
+                    option.text = method;
+                    select.appendChild(option);
+                });
+
+                inputCell.appendChild(select);
+            } else if (index < 3) { // Дата и Этап
                 const input = document.createElement('input');
                 input.type = 'text';
                 input.style.width = '100%';
                 input.style.boxSizing = 'border-box';
                 inputCell.appendChild(input);
-            } else {
-                const input = document.createElement('input');
-                input.type = 'text';
-                input.style.width = '100%';
-                input.style.boxSizing = 'border-box';
-                input.addEventListener('input', updatePercentSelfReactions);
-                inputCell.appendChild(input);
+            } else { // Столбцы 1-10
+                const select = document.createElement('select');
+                select.style.width = '100%';
+                select.style.boxSizing = 'border-box';
+
+                // Добавляем опции для выпадающего списка
+                const options = ['С', 'Н', '+'];
+                options.forEach(optionText => {
+                    const option = document.createElement('option');
+                    option.value = optionText;
+                    option.text = optionText;
+                    select.appendChild(option);
+                });
+
+                select.addEventListener('change', updatePercentSelfReactions);
+                inputCell.appendChild(select);
             }
             inputCell.style.border = '1px solid black';
             inputCell.style.padding = '8px';
@@ -168,7 +200,6 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     // Обработчик события click для кнопки "Сохранить сессию"
-    // Обработчик события click для кнопки "Сохранить сессию"
     saveSessionButton.addEventListener('click', function() {
         const table = sessionTableContainer.querySelector('table');
         if (!table) {
@@ -177,15 +208,16 @@ document.addEventListener('DOMContentLoaded', function() {
         }
 
         const inputs = table.querySelectorAll('input');
-        if (inputs.length !== 13) {
+        const selects = table.querySelectorAll('select');
+        if (inputs.length !== 12 || selects.length !== 1) {
             alert('Неверное количество полей в таблице');
             return;
         }
 
         const dateInput = inputs[0].value;
-        const method = inputs[1].value;
-        const phase = inputs[2].value;
-        const sessionData = Array.from(inputs).slice(3, 13).map(input => input.value.charAt(0));
+        const method = selects[0].value;
+        const phase = inputs[1].value;
+        const sessionData = Array.from(inputs).slice(2, 12).map(input => input.value.charAt(0));
 
         let date;
         if (dateInput) {
@@ -271,7 +303,7 @@ document.addEventListener('DOMContentLoaded', function() {
             const newWindow = window.open('', '_blank');
             newWindow.document.write('<html><head><title>Сессии</title></head><body>');
             newWindow.document.write('<h1>Сессии ребенка</h1>');
-            newWindow.document.write('<table border="1"><tr><th>Дата</th><th>Метод</th><th>Этап</th><th>Столбец 1</th><th>Столбец 2</th><th>Столбец 3</th><th>Столбец 4</th><th>Столбец 5</th><th>Столбец 6</th><th>Столбец 7</th><th>Столбец 8</th><th>Столбец 9</th><th>Столбец 10</th><th>Процент СР</th></tr>');
+            newWindow.document.write('<table border="1"><tr><th>Дата</th><th>Метод</th><th>Этап</th><th>Блок 1</th><th>Блок 2</th><th>Блок 3</th><th>Блок 4</th><th>Блок 5</th><th>Блок 6</th><th>Блок 7</th><th>Блок 8</th><th>Блок 9</th><th>Блок 10</th><th>Процент СР</th></tr>');
 
             sessions.forEach(session => {
                 newWindow.document.write('<tr>');

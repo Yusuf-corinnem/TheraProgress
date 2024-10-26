@@ -21,8 +21,12 @@ public class Child {
     @Column(name = "secondName")
     private String secondName;
     @Column(name = "birth")
-    @JsonFormat(pattern="dd.MM.yyyy")
+    @JsonFormat(pattern = "dd.MM.yyyy")
     private Date birth;
+    @Column(name = "target")
+    private String target;
+
+
     @Column(name = "method")
     private String method;
     @Column(name = "prompt")
@@ -41,6 +45,14 @@ public class Child {
         this.birth = birth;
         this.method = method;
         this.prompt = prompt;
+    }
+
+    public String getTarget() {
+        return target;
+    }
+
+    public void setTarget(String target) {
+        this.target = target;
     }
 
     public UUID getId() {
